@@ -68,8 +68,14 @@ const ResumeBuilder = () => {
         },
       );
       const data = await response.json();
-      setResumeData(data);
+
+      if(response.ok){
+        setResumeData(data);
       alert("Resume saved successfully!");
+      }else{
+        alert("Failed to save: " + (data.error || "Unknown error"));
+      }
+      
 
       
     } catch (error) {
@@ -231,7 +237,7 @@ const ResumeBuilder = () => {
                     )}
                     {activeSection.id === "summary" && (
                       <ProfessionalSummary
-                        data={resumeData.professional_summary}
+                        data={resumeData.professional_summary || ""}
                         onChange={(data) =>
                           setResumeData((prev) => ({
                             ...prev,
@@ -243,7 +249,7 @@ const ResumeBuilder = () => {
                     )}
                     {activeSection.id === "experience" && (
                       <ExperienceForm
-                        data={resumeData.experiences}
+                        data={resumeData.experiences || []}
                         onChange={(data) =>
                           setResumeData((prev) => ({
                             ...prev,
@@ -254,7 +260,7 @@ const ResumeBuilder = () => {
                     )}
                     {activeSection.id === "education" && (
                       <EducationForm
-                        data={resumeData.education}
+                        data={resumeData.education || []}
                         onChange={(data) =>
                           setResumeData((prev) => ({
                             ...prev,
@@ -265,7 +271,7 @@ const ResumeBuilder = () => {
                     )}
                     {activeSection.id === "projects" && (
                       <ProjectForm
-                        data={resumeData.projects}
+                        data={resumeData.projects || []}
                         onChange={(data) =>
                           setResumeData((prev) => ({
                             ...prev,
@@ -276,7 +282,7 @@ const ResumeBuilder = () => {
                     )}
                     {activeSection.id === "skills" && (
                       <SkillsForm
-                        data={resumeData.skills}
+                        data={resumeData.skills || []}
                         onChange={(data) =>
                           setResumeData((prev) => ({
                             ...prev,
