@@ -1,5 +1,6 @@
 import { Lock, Mail, User2Icon } from "lucide-react";
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
 
@@ -13,8 +14,38 @@ const Login = () => {
     password: "",
   });
 
+  const navigate = useNavigate();
+  const [error, setError] = React.useState("");
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    try {
+      const endpoint = state === "login" ? "/api/auth/login" : "/api/auth/register";
+      const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (state === "login") {
+          localStorage.setItem("resume-token", data.token);
+          localStorage.setItem("resume-user", JSON.stringify(data.user));
+          window.location.href = "/app";
+        } else {
+          alert("Registration successful! Please login.");
+          setState("login");
+        }
+      } else {
+        alert(data.error || "Something went wrong");
+      }
+    } catch (error) {
+      console.error("Auth error:", error);
+      alert("Failed to connect to the server");
+    }
   };
 
   const handleChange = (e) => {
@@ -32,9 +63,10 @@ const Login = () => {
           <h1 className="text-gray-900 text-3xl mt-10 font-medium">
             {state === "login" ? "Login" : "Sign up"}
           </h1>
-          <p className="text-gray-500 text-sm mt-2">
+          <p className="text-gray-500 text-sm mt-2 mb-4">
             Please {state} to continue
           </p>
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
           {state !== "login" && (
             <div className="flex items-center mt-6 w-full bg-white border border-gray-300/80 h-12 rounded-full overflow-hidden pl-6 gap-2">
              <User2Icon size={16} color="#6B7280"/>

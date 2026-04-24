@@ -2,6 +2,40 @@ import { Sparkles } from "lucide-react";
 import React from "react";
 
 const ProfessionalSummary = ({ data, onChange, setResumeData }) => {
+
+  const [isEnhancing, setIsEnhancing] = React.useState(false);
+
+  const handleAIEnhance = async () => {
+    if (!data) return alert("Please write some text first!");
+    
+    setIsEnhancing(true);
+    const token = localStorage.getItem("resume-token");
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/enhance`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ text: data, type: "professional summary" })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        onChange(result.enhancedText);
+      } else {
+        alert(result.error || "AI Enhancement failed");
+      }
+    } catch (error) {
+      console.error("AI Error:", error);
+      alert("Failed to connect to AI service");
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
+
   return (
     <>
       <div className="space-y-4">
@@ -14,9 +48,13 @@ const ProfessionalSummary = ({ data, onChange, setResumeData }) => {
               Briefly summarize your professional background.
             </p>
           </div>
-          <button className="flex items-center gap-1 text-sm text-purple-600 bg-gradient-to-br from-purple-50 to-purple-100 ring-purple-300 hover:ring transition-all px-3 py-2 rounded-lg whitespace-nowrap">
-            <Sparkles size={16} />
-            <span>AI Enhance</span>
+          <button 
+            onClick={handleAIEnhance}
+            disabled={isEnhancing}
+            className="flex items-center gap-1 text-sm text-purple-600 bg-gradient-to-br from-purple-50 to-purple-100 ring-purple-300 hover:ring transition-all px-3 py-2 rounded-lg whitespace-nowrap disabled:opacity-50"
+          >
+            <Sparkles size={16} className={isEnhancing ? "animate-spin" : ""} />
+            <span>{isEnhancing ? "Enhancing..." : "AI Enhance"}</span>
           </button>
         </div>
         <div className="mt-6">

@@ -2,11 +2,14 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
-  const user = { name: "Amit Mondal" };
+  const userString = localStorage.getItem("user");
+  const user = userString ? JSON.parse(userString) : { name: "User" };
   const navigate = useNavigate();
 
   const logoutUser = () => {
-    navigate('/') //I can go back from here so i have to change it
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate('/login')
   }
 
   return (

@@ -2,6 +2,40 @@ import { Briefcase, Plus, Sparkles, Trash2 } from "lucide-react";
 import React from "react";
 
 const ExperienceForm = ({ data, onChange }) => {
+  const [enhancingIndex, setEnhancingIndex] = React.useState(null);
+
+  const handleAIEnhance = async (index) => {
+    const text = data[index].description;
+    if (!text) return alert("Please write a description first!");
+
+    setEnhancingIndex(index);
+    const token = localStorage.getItem("resume-token");
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/ai/enhance`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ text, type: "job description" })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        updateExperience(index, "description", result.enhancedText);
+      } else {
+        alert(result.error || "AI Enhancement failed");
+      }
+    } catch (error) {
+      console.error("AI Error:", error);
+      alert("Failed to connect to AI service");
+    } finally {
+      setEnhancingIndex(null);
+    }
+  };
+
   const addExperience = () => {
     const newExperience = {
       company: "",
@@ -134,9 +168,13 @@ const ExperienceForm = ({ data, onChange }) => {
                     <label className="text-sm font-medium text-gray-700">
                       Job Description
                     </label>
-                    <button className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50">
-                      <Sparkles className="w-3 h-3" />
-                      Enhance with AI
+                    <button 
+                      onClick={() => handleAIEnhance(index)}
+                      disabled={enhancingIndex === index}
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50"
+                    >
+                      <Sparkles className={`w-3 h-3 ${enhancingIndex === index ? "animate-spin" : ""}`} />
+                      {enhancingIndex === index ? "Enhancing..." : "Enhance with AI"}
                     </button>
                   </div>
                   <textarea

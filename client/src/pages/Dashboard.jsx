@@ -24,10 +24,20 @@ export const Dashboard = () => {
   const [editResumeId, setEditResumeId] = React.useState("");
 
   const navigate = useNavigate();
+  const token = localStorage.getItem("resume-token");
+  const userData = JSON.parse(localStorage.getItem("resume-user") || "{}");
 
   const loadAllResumes = async () => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
     try {
-      const response = await fetch("http://localhost:5000/api/resumes");
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
       const data = await response.json();
 
       setAllResumes(data);
@@ -35,26 +45,81 @@ export const Dashboard = () => {
       console.error("Failed to load resumes from the backend", error);
     }
   };
+
+  const logout = () => {
+    localStorage.removeItem("resume-token");
+    localStorage.removeItem("resume-user");
+    window.location.href = "/login";
+  };
   const createResume = async (e) => {
     e.preventDefault();
-    setShowCreateResume(false);
-    navigate("/app/builder/res123");
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ title })
+      });
+      const data = await response.json();
+      
+      if(response.ok) {
+        setShowCreateResume(false);
+        navigate(`/app/builder/${data._id}`);
+      } else {
+        alert(data.error || "Failed to create resume");
+      }
+    } catch (error) {
+      console.error("Error creating resume:", error);
+    }
   };
 
   const uploadResume = async (e) => {
     e.preventDefault();
-    setShowUploadResume(false);
-    navigate("/app/builder/res123");
+    const token = localStorage.getItem("token");
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/resumes`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ title: title })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setShowUploadResume(false);
+        navigate(`/app/builder/${data._id}`);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const editTitle = async (e) => {
     e.preventDefault();
     if (editResumeId) {
-      setAllResumes((prev) =>
-        prev.map((r) => (r._id === editResumeId ? { ...r, title } : r)),
-      );
-      setEditResumeId("");
-      setTitle("");
+      const token = localStorage.getItem("token");
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/resumes/${editResumeId}`, {
+          method: "PUT",
+          headers: { 
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify({ title: title })
+        });
+        if (response.ok) {
+          setAllResumes((prev) =>
+            prev.map((r) => (r._id === editResumeId ? { ...r, title } : r)),
+          );
+          setEditResumeId("");
+          setTitle("");
+        }
+      } catch (error) {
+        console.error(error);
+      }
     }
   };
 
@@ -63,15 +128,18 @@ export const Dashboard = () => {
       "Are you sure you want to delete this resume?",
     );
     if (confirm) {
+      const token = localStorage.getItem("token");
       try {
         const response = await fetch(
-          `http://localhost:5000/api/resumes/${id}`,
-          { method: "DELETE" },
+          `${import.meta.env.VITE_API_URL}/api/resumes/${id}`,
+          { 
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` }
+          }
         );
         if(response.ok){
            setAllResumes((prev) => prev.filter((r) => r._id !== id));
         }
-       
       } catch (error) {
         console.error("Error message: ", error.message);
       }
@@ -81,13 +149,28 @@ export const Dashboard = () => {
   useEffect(() => {
     loadAllResumes();
   }, []);
+
+  const userString = localStorage.getItem("user");
+  const user = userString ? JSON.parse(userString) : { name: "User" };
+
   return (
     <>
       <div>
         <div className="max-w-7xl mx-auto px-4 py-8">
           <p className="text-2xl font-medium mb-6 bg-gradient-to-r from-slate-600 to-slate-700 bg-clip-text text-transparent sm:hidden">
-            Welcome, Amit Mondal
+            Welcome, {user.name}
           </p>
+          <div className="hidden sm:flex justify-between items-center mb-6">
+            <p className="text-2xl font-medium bg-gradient-to-r from-slate-600 to-slate-700 bg-clip-text text-transparent">
+              Welcome, {user.name}
+            </p>
+            <button 
+              onClick={logout}
+              className="text-sm text-red-500 hover:text-red-700 font-medium transition-colors"
+            >
+              Logout
+            </button>
+          </div>
           <div className="flex gap-4">
             <button
               onClick={() => setShowCreateResume(true)}

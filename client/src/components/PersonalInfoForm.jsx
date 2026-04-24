@@ -22,6 +22,32 @@ const PersonalInfoForm = ({
     });
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        handleChange("image", data.imageUrl);
+      } else {
+        alert("Upload failed: " + data.error);
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Error uploading image");
+    }
+  };
+
   const fields = [
     {
       key: "full_name",
@@ -100,7 +126,7 @@ const PersonalInfoForm = ({
               type="file"
               accept="image/jpeg, image/png"
               className="hidden"
-              onChange={(e) => handleChange("image", e.target.files[0])}
+              onChange={handleImageUpload}
             />
           </label>
           {typeof data.image === "object" && (

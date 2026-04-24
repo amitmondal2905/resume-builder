@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import Loader from "../components/Loader";
 // import { dummyResumeData } from "../assets/assets";
 import {
@@ -28,6 +28,7 @@ import SkillsForm from "../components/SkillsForm";
 
 const ResumeBuilder = () => {
   const { resumeId } = useParams();
+  const navigate = useNavigate();
 
   const [isLoading, setIsLoading] = React.useState(true);
   const [resumeData, setResumeData] = React.useState({
@@ -45,37 +46,44 @@ const ResumeBuilder = () => {
   });
 
   const loadExistingResume = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
     try {
       const response = await fetch(
-        `http://localhost:5000/api/resumes/${resumeId}`,
+        `${import.meta.env.VITE_API_URL}/api/resumes/${resumeId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
       );
       const data = await response.json();
       setResumeData(data);
       setIsLoading(false);
     } catch (error) {
       console.error("Error message", error.message);
+      setIsLoading(false);
     }
   };
 
   const saveResume = async () => {
+    const token = localStorage.getItem("token");
     try {
       const response = await fetch(
-        `http://localhost:5000/api/resumes/${resumeId}`,
+        `${import.meta.env.VITE_API_URL}/api/resumes/${resumeId}`,
         {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
           body: JSON.stringify(resumeData),
         },
       );
       const data = await response.json();
-
-      if(response.ok){
-        setResumeData(data);
+      setResumeData(data);
       alert("Resume saved successfully!");
-      }else{
-        alert("Failed to save: " + (data.error || "Unknown error"));
-      }
-      
 
       
     } catch (error) {
@@ -122,7 +130,25 @@ const ResumeBuilder = () => {
   }, []);
 
   const changeResumeVisibility = async () => {
-    setResumeData({ ...resumeData, public: !resumeData.public });
+    const newVisibility = !resumeData.public;
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/resumes/${resumeId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ ...resumeData, public: newVisibility })
+      });
+
+      if (response.ok) {
+        setResumeData({ ...resumeData, public: newVisibility });
+      } else {
+        alert("Failed to update visibility");
+      }
+    } catch (error) {
+      console.error("Error updating visibility:", error);
+    }
   };
 
   const handleShare = () => {
